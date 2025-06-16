@@ -50,6 +50,12 @@ with st.form("prediction_form"):
 
 # --- Prediction and Output ---
 if submitted:
+    
+    total_hours = study + sleep + social + extracurricular + physical
+    if total_hours > 24:
+        st.error(f"🚨 Total hours ({total_hours:.1f}) cannot exceed 24. Please adjust the sliders.")
+        st.stop()
+    
     # The list of feature names MUST be in the exact same order as in your training script.
     feature_names = [
         'Study_Hours_Per_Day', 'Extracurricular_Hours_Per_Day',
