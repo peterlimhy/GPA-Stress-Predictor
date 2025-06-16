@@ -1,10 +1,11 @@
 import streamlit as st
 import numpy as np
+import pandas as pd
 import joblib
 
 # Load trained models and encoders
 gpa_model = joblib.load('best_svr_gpa_model.joblib')
-stress_model = joblib.load('best_svr_stress_model.joblib')
+stress_model = joblib.load('best_svr_stress_model.joblib') # This now contains the SVC model
 scaler = joblib.load('scaler.joblib')
 stress_encoder = joblib.load('stress_ordinal_encoder.joblib')
 
@@ -20,7 +21,7 @@ st.markdown("""
 .result-box {
     background-color: #f0f2f6;
     padding: 20px;
-    border-radius: 12px;`
+    border-radius: 12px;
     margin-top: 20px;
     color: black;
 }
@@ -49,14 +50,32 @@ with st.form("prediction_form"):
 
 # --- Prediction and Output ---
 if submitted:
-    input_data = np.array([[study, extracurricular, sleep, social, physical]])
-    scaled_input = scaler.transform(input_data)
+    # The list of feature names MUST be in the exact same order as in your training script.
+    feature_names = [
+        'Study_Hours_Per_Day', 'Extracurricular_Hours_Per_Day',
+        'Sleep_Hours_Per_Day', 'Social_Hours_Per_Day',
+        'Physical_Activity_Hours_Per_Day'
+    ]
+
+    # Create a pandas DataFrame from the user's input
+    input_df = pd.DataFrame([{
+        'Study_Hours_Per_Day': study,
+        'Extracurricular_Hours_Per_Day': extracurricular,
+        'Sleep_Hours_Per_Day': sleep,
+        'Social_Hours_Per_Day': social,
+        'Physical_Activity_Hours_Per_Day': physical
+    }], columns=feature_names)
+
+    # Scale the DataFrame
+    scaled_input = scaler.transform(input_df)
     
-    # Predict GPA and stress
+    # Predict GPA using the SVR model
     gpa = gpa_model.predict(scaled_input)[0]
-    stress_prediction_raw = stress_model.predict(scaled_input)
-    stress_encoded = np.round(stress_prediction_raw).astype(int)
-    stress_level = stress_encoder.inverse_transform(stress_encoded.reshape(-1, 1))[0][0]    
+    
+    # Predict Stress Level using the SVC model
+    # The output is now a direct integer class (0, 1, or 2), no rounding is needed.
+    stress_encoded = stress_model.predict(scaled_input)
+    stress_level = stress_encoder.inverse_transform(stress_encoded.reshape(-1, 1))[0][0]
     
     # Recommendations
     def gpa_advice(gpa):
