@@ -22,6 +22,7 @@ st.markdown("""
     padding: 20px;
     border-radius: 12px;`
     margin-top: 20px;
+    color: black;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -53,8 +54,9 @@ if submitted:
     
     # Predict GPA and stress
     gpa = gpa_model.predict(scaled_input)[0]
-    stress_encoded = stress_model.predict(scaled_input).reshape(-1, 1)
-    stress_level = stress_encoder.inverse_transform(stress_encoded)[0][0]
+    stress_prediction_raw = stress_model.predict(scaled_input)
+    stress_encoded = np.round(stress_prediction_raw).astype(int)
+    stress_level = stress_encoder.inverse_transform(stress_encoded.reshape(-1, 1))[0][0]    
     
     # Recommendations
     def gpa_advice(gpa):
